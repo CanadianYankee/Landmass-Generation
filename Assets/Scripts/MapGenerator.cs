@@ -11,8 +11,9 @@ public class MapGenerator : MonoBehaviour {
 	};
 	public DrawMode drawMode;
 
-	public int mapWidth;
-	public int mapHeight;
+	const int mapChunkSize = 241;
+	[Range(0,6)]
+	public int levelOfDetail;
 	public float noiseScale;
 
 	public int octaves;
@@ -32,19 +33,19 @@ public class MapGenerator : MonoBehaviour {
 
 	public void GenerateMap()
 	{
-		float[,] noiseMap = Noise.GenerateNoiseMap(mapWidth, mapHeight, seed, noiseScale, octaves, persistance, lacunarity, offset);
-		Color[] colorMap = new Color[mapWidth * mapHeight];
+		float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, offset);
+		Color[] colorMap = new Color[mapChunkSize * mapChunkSize];
 
-		for (int y = 0; y < mapHeight; y++)
+		for (int y = 0; y < mapChunkSize; y++)
 		{
-			for (int x = 0; x < mapWidth; x++)
+			for (int x = 0; x < mapChunkSize; x++)
 			{
 				float currentHeight = noiseMap[x, y];
 				for (int i = 0; i < regions.Length; i++)
 				{
 					if (currentHeight <= regions[i].height)
 					{
-						colorMap[x + y * mapWidth] = regions[i].color;
+						colorMap[x + y * mapChunkSize] = regions[i].color;
 						break;
 					}
 				}
@@ -58,21 +59,17 @@ public class MapGenerator : MonoBehaviour {
 		}
 		else if (drawMode == DrawMode.ColorMap)
 		{
-			display.DrawTexture(TextureGenerator.TextureFromColorMap(colorMap, mapWidth, mapHeight));
+			display.DrawTexture(TextureGenerator.TextureFromColorMap(colorMap, mapChunkSize, mapChunkSize));
 		}
 		else if (drawMode == DrawMode.Mesh)
 		{
-			display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, meshHeightMultiplier, meshHeightCurve), 
-				TextureGenerator.TextureFromColorMap(colorMap, mapWidth, mapHeight));
+			display.DrawMesh(MeshGenerator.GenerateTerrainMesh(noiseMap, meshHeightMultiplier, meshHeightCurve, levelOfDetail), 
+				TextureGenerator.TextureFromColorMap(colorMap, mapChunkSize, mapChunkSize));
 		}
 	}
 
 	void OnValidate()
 	{
-		if (mapWidth < 1)
-			mapWidth = 1;
-		if (mapHeight < 1)
-			mapHeight = 1;
 		if (lacunarity < 1)
 			lacunarity = 1;
 		if (octaves < 0)
